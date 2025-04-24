@@ -38,13 +38,23 @@ export const App = () => {
     <section className="mx-auto max-w-[1100px]">
       <div className="p-6">
         <h2 className="mb-4 text-2xl font-semibold">Кластеризация AI & Human текстов</h2>
-        <a
-          className="text-blue-600 underline"
-          target="_blank"
-          href="https://huggingface.co/datasets/HumanLLMs/Human-Like-DPO-Dataset"
-        >
-          Ссылка на датасет hugging face
-        </a>
+
+        <div className="mb-4 flex flex-col gap-2">
+          <a
+            className="text-blue-600 underline"
+            target="_blank"
+            href="https://huggingface.co/datasets/HumanLLMs/Human-Like-DPO-Dataset"
+          >
+            Ссылка на датасет hugging face
+          </a>
+          <a
+            className="text-blue-600 underline"
+            target="_blank"
+            href="https://github.com/KIWIBIRD72/ai_detector"
+          >
+            GitHub репозиторий проекта
+          </a>
+        </div>
         <div className="mb-4 text-gray-700">
           Accuracy кластеризации:{" "}
           {stats ? <strong>{(stats.accuracy * 100).toFixed(2)}%</strong> : "Loading..."}
