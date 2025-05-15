@@ -1,121 +1,86 @@
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { Service } from "./shared/services";
-import { ScatterChart, CartesianGrid, XAxis, YAxis, Tooltip, Scatter, Legend } from "recharts";
-import { useEffect, useState } from "react";
-import { ClusterType } from "./shared/services/types";
-import { cn } from "./shared/utils/cn";
+import { FC, useState } from "react";
+import { ClusteringMethod } from "./shared/services/types";
+import { ClusterStats } from "./components/ClusterStats";
+import { ClusterChart } from "./components/ClusterChart";
+import { Tabs } from "./shared/ui/Tabs";
+import { AnimatePresence, motion } from "motion/react";
+import { Loader } from "./shared/ui/Loader";
+import { SourceLinks } from "./components/SourceLinks";
 
 export const App = () => {
-  const [page, setPage] = useState(1);
-  const [allData, setAllData] = useState<ClusterType[]>([]);
+  const [method, setMethod] = useState(ClusteringMethod.FUZZY);
 
-  const { data: clusterData, isFetching } = useQuery({
-    queryKey: ["clusters", page],
-    queryFn: () => Service.getClusters(page),
-    refetchOnMount: true,
-  });
+  const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, refetch } =
+    useInfiniteQuery({
+      queryKey: ["clusters", method],
+      initialPageParam: 1,
+      queryFn: ({ pageParam = 1 }) => Service.getClusters(pageParam, 200, method),
+      getNextPageParam: (lastPage, allPages) => {
+        const total = lastPage.total ?? 0;
+        const loaded = allPages.flatMap((p) => p.data).length;
+        return loaded < total ? allPages.length + 1 : undefined;
+      },
+      refetchOnMount: true,
+    });
 
-  useEffect(() => {
-    if (clusterData?.data) {
-      setAllData((prev) => [...prev, ...clusterData.data]);
-    }
-  }, [clusterData]);
+  const allData = data?.pages.flatMap((p) => p.data) ?? [];
 
-  const { data: stats } = useQuery({
-    queryKey: ["clusters-stats"],
-    queryFn: () => Service.getClusterStats(),
-    refetchOnMount: true,
-  });
-
-  const handleLoadMore = () => {
-    setPage((prev) => prev + 1);
+  const handleMethodChange = (state: ClusteringMethod) => {
+    setMethod(state);
+    refetch();
   };
-
-  const correctData = allData.filter((d) => d.cluster === d.true_label);
-  const incorrectData = allData.filter((d) => d.cluster !== d.true_label);
 
   return (
     <section className="mx-auto max-w-[1100px]">
-      <div className="p-6">
+      <AnimatePresence>
+        {isFetching && !isFetchingNextPage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed top-0 left-0 z-50 flex h-full w-full items-center justify-center bg-white/50"
+          >
+            <Loader />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="flex flex-col gap-4 p-6">
         <h2 className="mb-4 text-2xl font-semibold">Кластеризация AI & Human текстов</h2>
 
-        <div className="mb-4 flex flex-col gap-2">
-          <a
-            className="text-blue-600 underline"
-            target="_blank"
-            href="https://huggingface.co/datasets/HumanLLMs/Human-Like-DPO-Dataset"
-          >
-            Ссылка на датасет hugging face
-          </a>
-          <a
-            className="text-blue-600 underline"
-            target="_blank"
-            href="https://github.com/KIWIBIRD72/ai_detector"
-          >
-            GitHub репозиторий проекта
-          </a>
-        </div>
-        <div className="mb-4 text-gray-700">
-          Accuracy кластеризации:{" "}
-          {stats ? <strong>{(stats.accuracy * 100).toFixed(2)}%</strong> : "Loading..."}
-        </div>
+        <Tabs
+          id={"clustering method select"}
+          tabs={[
+            { id: 1, label: "KMeans", data: ClusteringMethod.K_MEANS },
+            { id: 2, label: "Fuzzy", data: ClusteringMethod.FUZZY },
+          ]}
+          onChange={(data) => handleMethodChange(data.data)}
+          className="max-w-[300px]"
+        />
 
-        <ScatterChart width={1000} height={600}>
-          <CartesianGrid />
-          <XAxis type="number" dataKey="x" name="X" />
-          <YAxis type="number" dataKey="y" name="Y" />
-          <Tooltip
-            cursor={{ strokeDasharray: "3 3" }}
-            content={({ active, payload }) => {
-              if (active && payload && payload.length) {
-                const point = payload[0].payload as ClusterType;
-                return (
-                  <div
-                    className={cn(
-                      "max-w-md rounded-xl border bg-white p-2 shadow",
-                      point.cluster === 0 ? "border-[#8884d8]" : "border-[#82ca9d]",
-                    )}
-                  >
-                    <div>
-                      <strong>Текст:</strong> {point.text.slice(0, 100)}...
-                    </div>
-                    <div>
-                      <strong>Определенный кластер:</strong>{" "}
-                      {point.cluster === 0 ? "Human (0)" : "AI (1)"}
-                    </div>
-                    <div>
-                      <strong>Истинный кластер:</strong> {point.true_label === 0 ? "Human" : "AI"}
-                    </div>
-                  </div>
-                );
-              }
-              return null;
-            }}
-          />
-          <Legend />
-          <Scatter
-            name="Cluster 0 (Human)"
-            data={correctData.filter((d) => d.cluster === 0)}
-            fill="#8884d8"
-          />
-          <Scatter
-            name="Cluster 1 (AI)"
-            data={correctData.filter((d) => d.cluster === 1)}
-            fill="#82ca9d"
-          />
-          <Scatter name="Неверно кластеризовано" data={incorrectData} fill="#ff4d4f" />
-        </ScatterChart>
+        <ClusterStats
+          allData={allData}
+          accuracy={data?.pages[0]?.accuracy}
+          total={data?.pages[0]?.total}
+        />
+        <ClusterChart allData={allData} method={method} />
 
-        <div className="mt-4">
-          <button
-            onClick={handleLoadMore}
-            disabled={isFetching}
-            className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
-          >
-            {isFetching ? "Загрузка..." : "Загрузить ещё"}
-          </button>
-        </div>
+        {hasNextPage && (
+          <div className="mt-4">
+            <button
+              onClick={() => fetchNextPage()}
+              disabled={isFetchingNextPage}
+              className="rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-600"
+            >
+              {isFetchingNextPage ? "Загрузка..." : "Загрузить ещё"}
+            </button>
+          </div>
+        )}
       </div>
+
+      <SourceLinks />
     </section>
   );
 };

@@ -22,3 +22,8 @@ export type ClusterType = {
 export type GetAccuracyResponse = {
   accuracy: number;
 };
+
+export enum ClusteringMethod {
+  K_MEANS = "kmeans",
+  FUZZY = "fuzzy",
+}
