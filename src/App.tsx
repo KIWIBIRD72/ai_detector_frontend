@@ -11,12 +11,13 @@ import { SourceLinks } from "./components/SourceLinks";
 
 export const App = () => {
   const [method, setMethod] = useState(ClusteringMethod.FUZZY);
+  const [nClusters, setNClusters] = useState(2);
 
   const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage, refetch } =
     useInfiniteQuery({
-      queryKey: ["clusters", method],
+      queryKey: ["clusters", method, nClusters],
       initialPageParam: 1,
-      queryFn: ({ pageParam = 1 }) => Service.getClusters(pageParam, 200, method),
+      queryFn: ({ pageParam = 1 }) => Service.getClusters(pageParam, 200, method, nClusters),
       getNextPageParam: (lastPage, allPages) => {
         const total = lastPage.total ?? 0;
         const loaded = allPages.flatMap((p) => p.data).length;
@@ -60,12 +61,22 @@ export const App = () => {
           className="max-w-[300px]"
         />
 
+        <Tabs
+          id={"clusters number"}
+          tabs={[
+            { id: 1, label: "2 clusters", data: 2 },
+            { id: 2, label: "5 clusters", data: 5 },
+          ]}
+          onChange={(data) => setNClusters(data.data)}
+          className="max-w-[300px]"
+        />
+
         <ClusterStats
           allData={allData}
           accuracy={data?.pages[0]?.accuracy}
           total={data?.pages[0]?.total}
         />
-        <ClusterChart allData={allData} method={method} />
+        <ClusterChart allData={allData} method={method} nClusters={nClusters} />
 
         {hasNextPage && (
           <div className="mt-4">
