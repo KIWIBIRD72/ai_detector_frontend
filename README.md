@@ -1,3 +1,21 @@
+# 🚀 Get started
+- Необходимые инструменты
+  - [Nodejs](https://nodejs.org/en)
+
+- Установка зависимостей
+  ```bash
+  npm install
+  ```
+- Запуск в dev режиме
+  ```bash
+  npm run dev
+  ```
+- Запуск в prod режиме
+  ```bash
+  npm run build
+  npm run start
+  ```
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
