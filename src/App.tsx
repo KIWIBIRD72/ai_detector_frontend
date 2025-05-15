@@ -1,6 +1,6 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Service } from "./shared/services";
-import { FC, useState } from "react";
+import { useState } from "react";
 import { ClusteringMethod } from "./shared/services/types";
 import { ClusterStats } from "./components/ClusterStats";
 import { ClusterChart } from "./components/ClusterChart";
