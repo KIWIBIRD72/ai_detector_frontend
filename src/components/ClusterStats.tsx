@@ -1,10 +1,12 @@
 import { FC, ReactNode, useMemo } from "react";
-import { ClusterType } from "../shared/services/types";
+import { ClusteringMethod, ClusterType } from "../shared/services/types";
 
 interface Props {
   allData: ClusterType[];
   accuracy?: number;
   total?: number;
+  method: ClusteringMethod;
+  nClusters: number;
 }
 
 const formatter = new Intl.NumberFormat("ru", {
@@ -12,18 +14,18 @@ const formatter = new Intl.NumberFormat("ru", {
   maximumFractionDigits: 0,
 });
 
-export const ClusterStats: FC<Props> = ({ allData, accuracy, total }) => {
+export const ClusterStats: FC<Props> = ({ allData, accuracy, total, method, nClusters }) => {
   const humanLikeAmount = useMemo(
     () => allData.filter((d) => d.cluster === 0).length,
-    [allData.length],
+    [allData.length, method, nClusters],
   );
   const aiLikeAmount = useMemo(
     () => allData.filter((d) => d.cluster === 1).length,
-    [allData.length],
+    [allData.length, method, nClusters],
   );
   const incorrectAmount = useMemo(
     () => allData.filter((d) => d.cluster !== d.true_label).length,
-    [allData.length],
+    [allData.length, method, nClusters],
   );
 
   const statisticsData = useMemo(
@@ -31,14 +33,14 @@ export const ClusterStats: FC<Props> = ({ allData, accuracy, total }) => {
       {
         id: 1,
         title: "Accuracy кластеризации",
-        value: `${accuracy ? (accuracy * 100).toFixed(2) : "..."}%`,
+        value: nClusters === 2 ? `${accuracy ? (accuracy * 100).toFixed(2) : "..."}%` : "--",
       },
       { id: 2, title: "Общее число текстов", value: total ? formatter.format(total) : "..." },
       { id: 3, title: "Human like", value: formatter.format(humanLikeAmount) },
       { id: 4, title: "AI like", value: formatter.format(aiLikeAmount) },
       { id: 5, title: "Incorrect", value: formatter.format(incorrectAmount) },
     ],
-    [allData.length],
+    [allData.length, method, nClusters],
   );
 
   return (

@@ -17,13 +17,23 @@ export const App = () => {
     useInfiniteQuery({
       queryKey: ["clusters", method, nClusters],
       initialPageParam: 1,
-      queryFn: ({ pageParam = 1 }) => Service.getClusters(pageParam, 200, method, nClusters),
+      queryFn: ({ pageParam = 1 }) => {
+        switch (method) {
+          case ClusteringMethod.K_MEANS:
+            return Service.getKmeansClusters(pageParam, 200, nClusters);
+          case ClusteringMethod.FUZZY:
+            return Service.getFuzzyClusters(pageParam, 200, nClusters);
+          case ClusteringMethod.CNN:
+            return Service.getCnnClusters(pageParam, 200, nClusters);
+        }
+      },
       getNextPageParam: (lastPage, allPages) => {
         const total = lastPage.total ?? 0;
         const loaded = allPages.flatMap((p) => p.data).length;
         return loaded < total ? allPages.length + 1 : undefined;
       },
       refetchOnMount: true,
+      refetchOnWindowFocus: false,
     });
 
   const allData = data?.pages.flatMap((p) => p.data) ?? [];
@@ -56,25 +66,34 @@ export const App = () => {
           tabs={[
             { id: 1, label: "KMeans", data: ClusteringMethod.K_MEANS },
             { id: 2, label: "Fuzzy", data: ClusteringMethod.FUZZY },
+            { id: 3, label: "CNN", data: ClusteringMethod.CNN },
           ]}
           onChange={(data) => handleMethodChange(data.data)}
-          className="max-w-[300px]"
+          className="max-w-[400px]"
         />
 
-        <Tabs
-          id={"clusters number"}
-          tabs={[
-            { id: 1, label: "2 clusters", data: 2 },
-            { id: 2, label: "5 clusters", data: 5 },
-          ]}
-          onChange={(data) => setNClusters(data.data)}
-          className="max-w-[300px]"
-        />
+        <div className="flex gap-2">
+          <Tabs
+            id={"clusters number"}
+            tabs={[
+              { id: 1, label: "2 clusters", data: 2 },
+              { id: 2, label: "5 clusters", data: 5 },
+            ]}
+            onChange={(data) => setNClusters(data.data)}
+            className="max-w-[400px]"
+          />
+
+          {nClusters === 2 && (
+            <h5 className="text-[12px] text-black/50">Cluster 0 - Human, Cluster 1 - AI</h5>
+          )}
+        </div>
 
         <ClusterStats
           allData={allData}
-          accuracy={data?.pages[0]?.accuracy}
-          total={data?.pages[0]?.total}
+          accuracy={data?.pages[data.pages.length - 1]?.accuracy}
+          total={data?.pages[data.pages.length - 1]?.total}
+          method={method}
+          nClusters={nClusters}
         />
         <ClusterChart allData={allData} method={method} nClusters={nClusters} />
 

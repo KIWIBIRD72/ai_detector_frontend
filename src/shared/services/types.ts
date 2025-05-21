@@ -26,4 +26,11 @@ export type GetAccuracyResponse = {
 export enum ClusteringMethod {
   K_MEANS = "kmeans",
   FUZZY = "fuzzy",
+  CNN = "CNN",
 }
+
+export type GetClusters = (
+  page: number,
+  pageSize: number,
+  nClusters: number,
+) => Promise<ClusterResponseType<ClusterType>>;
