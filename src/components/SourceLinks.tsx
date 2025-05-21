@@ -1,7 +1,6 @@
 import { FC } from "react";
 
-type SourceLinksProps = {};
-export const SourceLinks: FC<SourceLinksProps> = (props) => {
+export const SourceLinks: FC = () => {
   return (
     <div className="mb-4 flex flex-col gap-2">
       <a

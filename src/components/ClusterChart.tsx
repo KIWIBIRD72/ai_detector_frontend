@@ -2,9 +2,7 @@ import { FC, useMemo } from "react";
 import { ScatterChart, CartesianGrid, XAxis, YAxis, Tooltip, Scatter, Legend } from "recharts";
 import { ClusteringMethod, ClusterType, Label } from "../shared/services/types";
 import { cn } from "../shared/utils/cn";
-
-// Генератор случайного цвета
-const getRandomColor = () => `hsl(${Math.floor(Math.random() * 360)}, 70%, 60%)`;
+import { getRandomColor } from "../shared/utils/getRandomColor";
 
 interface Props {
   allData: ClusterType[];
@@ -23,14 +21,14 @@ export const ClusterChart: FC<Props> = ({ allData, method, nClusters }) => {
     [allData.length, method, nClusters],
   );
 
-  // Получаем все кластеры, представленные в correctData
+  // Получение всех кластеров, представленные в correctData
   const clusterIds = useMemo(() => {
     const ids = new Set<number>();
     correctData.forEach((d) => ids.add(d.cluster));
     return Array.from(ids).sort((a, b) => a - b);
   }, [correctData]);
 
-  // Карта: id кластера → цвет
+  // Карта: id кластера -> цвет
   const clusterColors = useMemo(() => {
     const colors = new Map<number, string>();
     clusterIds.forEach((id) => {
@@ -56,37 +54,7 @@ export const ClusterChart: FC<Props> = ({ allData, method, nClusters }) => {
       <CartesianGrid />
       <XAxis type="number" dataKey="x" name="X" />
       <YAxis type="number" dataKey="y" name="Y" />
-      <Tooltip
-        cursor={{ strokeDasharray: "3 3" }}
-        content={({ active, payload }) => {
-          if (active && payload && payload.length) {
-            const point = payload[0].payload as ClusterType;
-            return (
-              <div
-                className={cn(
-                  "max-w-md rounded-xl border bg-white p-2 shadow",
-                  point.cluster !== point.true_label
-                    ? "border-red-400"
-                    : clusterColors.get(point.cluster)
-                      ? ""
-                      : "border-gray-400",
-                )}
-              >
-                <div>
-                  <strong>Текст:</strong> {point.text.slice(0, 200)}...
-                </div>
-                <div>
-                  <strong>Определенный кластер:</strong> {point.cluster}
-                </div>
-                <div>
-                  <strong>Истинный кластер:</strong> {point.true_label}
-                </div>
-              </div>
-            );
-          }
-          return null;
-        }}
-      />
+      <ClusterTooltip clusterColors={clusterColors} />
       <Legend />
 
       {/* Правильно определённые точки по кластерам */}
@@ -108,5 +76,44 @@ export const ClusterChart: FC<Props> = ({ allData, method, nClusters }) => {
         isAnimationActive={false}
       />
     </ScatterChart>
+  );
+};
+
+type ClusterTooltipProps = {
+  clusterColors: Map<number, string>;
+};
+const ClusterTooltip: FC<ClusterTooltipProps> = (props) => {
+  return (
+    <Tooltip
+      cursor={{ strokeDasharray: "3 3" }}
+      content={({ active, payload }) => {
+        if (active && payload && payload.length) {
+          const point = payload[0].payload as ClusterType;
+          return (
+            <div
+              className={cn(
+                "max-w-md rounded-xl border bg-white p-2 shadow",
+                point.cluster !== point.true_label
+                  ? "border-red-400"
+                  : props.clusterColors.get(point.cluster)
+                    ? ""
+                    : "border-gray-400",
+              )}
+            >
+              <div>
+                <strong>Текст:</strong> {point.text.slice(0, 200)}...
+              </div>
+              <div>
+                <strong>Определенный кластер:</strong> {point.cluster}
+              </div>
+              <div>
+                <strong>Истинный кластер:</strong> {point.true_label}
+              </div>
+            </div>
+          );
+        }
+        return null;
+      }}
+    />
   );
 };

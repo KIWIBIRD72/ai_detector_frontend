@@ -40,7 +40,7 @@ export const ClusterStats: FC<Props> = ({ allData, accuracy, total, method, nClu
       { id: 4, title: "AI like", value: formatter.format(aiLikeAmount) },
       { id: 5, title: "Incorrect", value: formatter.format(incorrectAmount) },
     ],
-    [allData.length, method, nClusters],
+    [accuracy, aiLikeAmount, humanLikeAmount, incorrectAmount, nClusters, total],
   );
 
   return (
