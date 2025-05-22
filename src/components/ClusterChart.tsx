@@ -54,7 +54,28 @@ export const ClusterChart: FC<Props> = ({ allData, method, nClusters }) => {
       <CartesianGrid />
       <XAxis type="number" dataKey="x" name="X" />
       <YAxis type="number" dataKey="y" name="Y" />
-      <ClusterTooltip clusterColors={clusterColors} />
+      <Tooltip
+        cursor={{ strokeDasharray: "3 3" }}
+        content={({ active, payload }) => {
+          if (active && payload && payload.length) {
+            const point = payload[0].payload as ClusterType;
+            return (
+              <div className={cn("max-w-md rounded-xl border border-gray-400 bg-white p-2 shadow")}>
+                <div>
+                  <strong>Текст:</strong> {point.text.slice(0, 200)}...
+                </div>
+                <div>
+                  <strong>Определенный кластер:</strong> {point.cluster}
+                </div>
+                <div>
+                  <strong>Истинный кластер:</strong> {point.true_label}
+                </div>
+              </div>
+            );
+          }
+          return null;
+        }}
+      />
       <Legend />
 
       {/* Правильно определённые точки по кластерам */}
@@ -76,44 +97,5 @@ export const ClusterChart: FC<Props> = ({ allData, method, nClusters }) => {
         isAnimationActive={false}
       />
     </ScatterChart>
-  );
-};
-
-type ClusterTooltipProps = {
-  clusterColors: Map<number, string>;
-};
-const ClusterTooltip: FC<ClusterTooltipProps> = (props) => {
-  return (
-    <Tooltip
-      cursor={{ strokeDasharray: "3 3" }}
-      content={({ active, payload }) => {
-        if (active && payload && payload.length) {
-          const point = payload[0].payload as ClusterType;
-          return (
-            <div
-              className={cn(
-                "max-w-md rounded-xl border bg-white p-2 shadow",
-                point.cluster !== point.true_label
-                  ? "border-red-400"
-                  : props.clusterColors.get(point.cluster)
-                    ? ""
-                    : "border-gray-400",
-              )}
-            >
-              <div>
-                <strong>Текст:</strong> {point.text.slice(0, 200)}...
-              </div>
-              <div>
-                <strong>Определенный кластер:</strong> {point.cluster}
-              </div>
-              <div>
-                <strong>Истинный кластер:</strong> {point.true_label}
-              </div>
-            </div>
-          );
-        }
-        return null;
-      }}
-    />
   );
 };
